@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>高并发解决方案 | Domination of Zopic</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://alexanderzopic.github.io/favicon.ico?v=1719477896937">
+<link rel="stylesheet" href="https://alexanderzopic.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="对于2c业务，模型上并没有2b业务那么复杂，但是往往需要面对高并发问题。本文将体系化地解读高并发应对策略，包括资源扩展、流量削峰、数据缓存、服务降级、限流等。
+
+
+高并发概述
+
+什么是并发？
+什么是高并发？
+并发的共享资源有哪些？
+
+内存（..." />
+    <meta name="keywords" content="高并发,系统设计" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://alexanderzopic.github.io">
+        <img src="https://alexanderzopic.github.io/images/avatar.png?v=1719477896937" class="site-logo">
+        <h1 class="site-title">Domination of Zopic</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于我
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      这里是Zopic形式化自己思维的地方<br/>
+This is where Zopic formalizes his thinking
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://alexanderzopic.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">高并发解决方案</h2>
+            <div class="post-date">2024-06-20</div>
+            
+              <div class="feature-container" style="background-image: url('https://alexanderzopic.github.io/post-images/npGx3EwEo.jpg')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>对于2c业务，模型上并没有2b业务那么复杂，但是往往需要面对高并发问题。本文将体系化地解读高并发应对策略，包括资源扩展、流量削峰、数据缓存、服务降级、限流等。</p>
+<!-- more -->
+<p><ul class="markdownIt-TOC">
+<li><a href="#%E9%AB%98%E5%B9%B6%E5%8F%91%E6%A6%82%E8%BF%B0">高并发概述</a>
+<ul>
+<li><a href="#%E4%BB%80%E4%B9%88%E6%98%AF%E5%B9%B6%E5%8F%91">什么是并发？</a></li>
+<li><a href="#%E4%BB%80%E4%B9%88%E6%98%AF%E9%AB%98%E5%B9%B6%E5%8F%91">什么是高并发？</a></li>
+<li><a href="#%E5%B9%B6%E5%8F%91%E7%9A%84%E5%85%B1%E4%BA%AB%E8%B5%84%E6%BA%90%E6%9C%89%E5%93%AA%E4%BA%9B">并发的共享资源有哪些？</a>
+<ul>
+<li><a href="#%E5%86%85%E5%AD%98memory">内存（Memory）：</a></li>
+<li><a href="#%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9Ffile-system">文件系统（File System）：</a></li>
+<li><a href="#%E6%95%B0%E6%8D%AE%E5%BA%93database">数据库（Database）：</a></li>
+<li><a href="#%E7%BD%91%E7%BB%9C%E8%B5%84%E6%BA%90network-resources">网络资源（Network Resources）：</a></li>
+<li><a href="#%E7%A1%AC%E4%BB%B6%E8%B5%84%E6%BA%90hardware-resources">硬件资源（Hardware Resources）：</a></li>
+</ul>
+</li>
+<li><a href="#%E6%8C%87%E6%A0%87">指标</a></li>
+</ul>
+</li>
+<li><a href="#%E5%9E%82%E7%9B%B4%E6%8B%93%E5%B1%95">垂直拓展</a></li>
+<li><a href="#%E6%B0%B4%E5%B9%B3%E6%8B%93%E5%B1%95">水平拓展</a>
+<ul>
+<li><a href="#%E6%9C%8D%E5%8A%A1%E5%B1%82%E6%B0%B4%E5%B9%B3%E6%8B%93%E5%B1%95">服务层水平拓展</a></li>
+<li><a href="#%E6%95%B0%E6%8D%AE%E5%B1%82%E6%B0%B4%E5%B9%B3%E6%8B%93%E5%B1%95">数据层水平拓展</a></li>
+</ul>
+</li>
+<li><a href="#%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1">负载均衡</a>
+<ul>
+<li><a href="#%E5%9B%9B%E5%B1%82%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1">四层负载均衡</a></li>
+<li><a href="#%E4%B8%83%E5%B1%82%E8%B4%9F%E8%BD%BD%E5%9D%87%E8%A1%A1">七层负载均衡</a></li>
+<li><a href="#%E6%95%B0%E6%8D%AE%E7%BC%93%E5%AD%98%E7%AD%96%E7%95%A5">数据缓存策略</a></li>
+</ul>
+</li>
+<li><a href="#%E6%9C%AC%E5%9C%B0%E7%BC%93%E5%AD%98">本地缓存</a>
+<ul>
+<li><a href="#%E7%89%B9%E6%80%A7%E5%92%8C%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF">特性和适用场景</a></li>
+<li><a href="#%E5%B0%9D%E8%AF%95%E6%B6%89%E5%8F%8A%E4%B8%80%E4%B8%AA%E6%9C%AC%E5%9C%B0%E7%BC%93%E5%AD%98%E6%9C%BA%E5%88%B6">尝试涉及一个本地缓存机制</a></li>
+</ul>
+</li>
+<li><a href="#%E5%88%86%E5%B8%83%E5%BC%8F%E7%BC%93%E5%AD%98">分布式缓存</a>
+<ul>
+<li><a href="#%E7%89%B9%E6%80%A7%E5%92%8C%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF-2">特性和适用场景</a></li>
+</ul>
+</li>
+<li><a href="#cdn">CDN</a></li>
+<li><a href="#%E6%B5%81%E9%87%8F%E5%89%8A%E5%B3%B0%E7%AD%96%E7%95%A5">流量削峰策略</a>
+<ul>
+<li><a href="#%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97%E5%89%8A%E5%B3%B0">消息队列削峰</a></li>
+</ul>
+</li>
+<li><a href="#%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%89%8A%E5%B3%B0">客户端削峰</a>
+<ul>
+<li><a href="#%E7%AD%94%E9%A2%98">答题</a></li>
+<li><a href="#%E9%99%90%E5%88%B6%E8%AF%B7%E6%B1%82">限制请求</a></li>
+</ul>
+</li>
+<li><a href="#%E5%90%84%E7%A7%8D%E9%99%90%E6%B5%81%E6%96%B9%E6%B3%95%E7%9A%84%E5%B1%80%E9%99%90%E6%80%A7">各种限流方法的局限性</a></li>
+<li><a href="#%E6%9C%8D%E5%8A%A1%E9%99%8D%E7%BA%A7">服务降级</a>
+<ul>
+<li><a href="#%E9%99%8D%E7%BA%A7%E8%8C%83%E5%9B%B4">降级范围</a></li>
+<li><a href="#%E9%99%8D%E7%BA%A7%E5%88%86%E7%B1%BB">降级分类</a></li>
+</ul>
+</li>
+<li><a href="#%E9%99%90%E6%B5%81">限流</a></li>
+<li><a href="#%E5%8E%9F%E5%88%99%E6%80%BB%E7%BB%93">原则总结</a>
+<ul>
+<li><a href="#%E5%86%99%E6%93%8D%E4%BD%9C%E5%9F%BA%E6%9C%AC%E5%8E%9F%E5%88%99">写操作基本原则</a></li>
+<li><a href="#%E8%AF%BB%E6%93%8D%E4%BD%9C%E5%9F%BA%E6%9C%AC%E5%8E%9F%E5%88%99">读操作基本原则</a></li>
+</ul>
+</li>
+</ul>
+</p>
+<h1 id="高并发概述">高并发概述</h1>
+<h2 id="什么是并发">什么是并发？</h2>
+<p>并发（Concurrency）是计算机科学中的一个概念，指的是多个计算过程在时间上交替进行。并发可以在单个处理器上通过时间分片（time-slicing）实现，也可以在多个处理器上通过实际的并行执行（parallelism）实现。</p>
+<h2 id="什么是高并发">什么是高并发？</h2>
+<p>高并发（High Concurrency）是指系统能够处理大量并发请求或操作的能力。高并发在互联网应用、分布式系统、大型在线服务等领域尤为重要，旨在提高系统的吞吐量和响应速度，确保在高负载下仍能提供稳定可靠的服务。</p>
+<h2 id="并发的共享资源有哪些">并发的共享资源有哪些？</h2>
+<h3 id="内存memory">内存（Memory）：</h3>
+<ul>
+<li>全局变量和静态变量：多个线程或进程可能会访问和修改这些变量。</li>
+<li>堆内存：动态分配的内存空间可能被多个线程或进程共享。</li>
+<li>缓冲区：用于存储临时数据的缓冲区可能会被多个线程或进程访问。</li>
+</ul>
+<h3 id="文件系统file-system">文件系统（File System）：</h3>
+<ul>
+<li>文件：多个线程或进程可能会同时读取或写入同一个文件。</li>
+<li>目录：对目录结构的操作（如创建、删除文件）可能会引发竞争条件。</li>
+</ul>
+<h3 id="数据库database">数据库（Database）：</h3>
+<ul>
+<li>数据库连接：多个线程或进程可能会共享同一个数据库连接。</li>
+<li>数据库记录：多个线程或进程可能会同时访问和修改相同的数据库记录，导致并发事务问题。</li>
+</ul>
+<h3 id="网络资源network-resources">网络资源（Network Resources）：</h3>
+<ul>
+<li>套接字（Socket）：多个线程或进程可能会通过同一个套接字进行网络通信。</li>
+<li>带宽：共享网络带宽可能会成为瓶颈。</li>
+</ul>
+<h3 id="硬件资源hardware-resources">硬件资源（Hardware Resources）：</h3>
+<ul>
+<li>CPU：多个线程或进程会竞争CPU时间片。</li>
+<li>I/O设备：例如打印机、硬盘等设备的访问需要同步。</li>
+<li>内存缓存（Cache）：CPU缓存、硬盘缓存等资源的访问需要协调。</li>
+</ul>
+<p>进一步的，我们可以把应分为CPU密集型和I/O密集型<br>
+单机理论上的最佳线程数为：<br>
+CPU密集型：线程数=CPU核数<br>
+I/O密集型：CPU核数*[1+(I/O耗时/CPU耗时)]</p>
+<h2 id="指标">指标</h2>
+<p>高并发相关指标：<br>
+响应时间：指系统处理一次请求需要的平均时间<br>
+吞吐量：单位时间内处理的请求数量<br>
+QPS：指每秒请求数。在互联网领域，QPS与吞吐量没有明确区分，常用与衡量单个接口的处理能力。<br>
+TPS：指每秒处理的事务，通常TPS是对整个系统而言的，一个事务处理可能对应多个请求。<br>
+并发量：指系统同时处理的请求数。计算：QPS*平均响应时间。</p>
+<h1 id="垂直拓展">垂直拓展</h1>
+<p>换cpu加cpu换内存加内存换硬盘加硬盘提宽带。</p>
+<h1 id="水平拓展">水平拓展</h1>
+<p>水平拓展是指通过加更多的服务器或者程序实例来分散负载，提升存储和计算能力。对单机要求不高，一般8核4GB就可以满足大部分服务了。<br>
+在做好层次和服务划分的前提下，水平拓展理论上是没有上限的（除非你把史瓦西半径考虑进来），你可以通过加机器满足任何容量需求。但是分布式会增加系统的复杂度，难以治理和运维。<br>
+水平拓展主要包括两个方面，服务层和数据层水平扩展。</p>
+<h2 id="服务层水平拓展">服务层水平拓展</h2>
+<p>即服务端应用系统水平拓展，增加应用服务器的数量。<br>
+要注意的是，每次请求都可能被负载均衡中间件转发到不同实例上，为了更好地支持水平扩展，业务服务常常设计成无状态服务。<br>
+有状态服务：服务端需要保存请求的信息：服务端需要保存请求的信息，并且其它请求还可以使用已保存的信息。<br>
+无状态服务：服务端处理逻辑中需要的数据完全来自本次请求携带的信息，虽然服务端也保存了一些信息，但这些信息要么与请求无关，要么为所有协议所用。</p>
+<h2 id="数据层水平拓展">数据层水平拓展</h2>
+<p>生产中的DB往往是单机部署的，虽然有一些分布式数据库出现，但目前并没有形成主流（2024）。随着业务流量扩大，部署在单一服务器的数据库可能会无法承受。<br>
+可以采用的方式有：读写分离（无法缓解写压力）、垂直分库、垂直分表。<br>
+实现水平扩容费需要解决诸多技术问题，如路由策略设计、跨库跨表查询、数据迁移等。</p>
+<h1 id="负载均衡">负载均衡</h1>
+<p>指将负载相对均匀地分摊到多个操作单元上执行。</p>
+<h2 id="四层负载均衡">四层负载均衡</h2>
+<p>在传输层进行，因此只能根据TCP、UDP协议中的IP和端口号进行负载均衡，主要用来选择目标服务器。<br>
+LVS是全球最流行的负载均衡开源软件。</p>
+<h2 id="七层负载均衡">七层负载均衡</h2>
+<p>也就是应用层面的负载均衡，本质通过报文内容进行负载均衡。<br>
+四层负载均衡下，均衡节点只是一个转发器；而七层均衡下，负载均衡节点需要与客户端、服务器建立TCP谅解，相当于代理服务器，更加灵活（可以制定多种策略）和安全（可以防止SYN攻击，根据内容过滤请求）。<br>
+Tengeine是当前最流行的七层负载均衡开源软件。</p>
+<h2 id="数据缓存策略">数据缓存策略</h2>
+<p>缓存，一般用来协调低速和高速组件，如cpu和内存、cpu和磁盘、服务器应用和数据库等。<br>
+在互联网应用开发中，有三种常用的缓存机制：本地缓存、分布式缓存、CDN。</p>
+<h1 id="本地缓存">本地缓存</h1>
+<p>相对于分布式缓存，有着无网络I/O、无序列化开销等优点，因此访问速度非常快。<br>
+本地缓存有两种实现路线：<br>
+基于编程语言或开发框架自行实现，如java的ConcurrentHashMap或Go的sync.Map等。<br>
+采用一些成熟的Cache架构，如Guava Cache，Ehache、Caffein等。</p>
+<h2 id="特性和适用场景">特性和适用场景</h2>
+<p>由于本地缓存无法水平扩展，没有持久化机制，所以很难保证一致性。因此适用于：</p>
+<ul>
+<li>数据量小</li>
+<li>变更频率底</li>
+<li>接受弱一致性<br>
+的数据缓存场景。</li>
+</ul>
+<h2 id="尝试涉及一个本地缓存机制">尝试涉及一个本地缓存机制</h2>
+<p>一个完整的本地缓存方案应该包含以下技术要点：</p>
+<ul>
+<li>数据存储，并支持读写操作</li>
+<li>线程安全</li>
+<li>设置缓存的最大限制</li>
+<li>淘汰策略，当超过最大限制时触发，如LRU和LFU</li>
+<li>过期删除，如定时删除或惰性删除</li>
+<li>持久化</li>
+<li>统计监控<br>
+除此之外，为了保证缓存之间的一致性可使用MQ的广播模式来通知各个本地缓存进行更新。<br>
+主要的实现有redis和memcached</li>
+</ul>
+<h1 id="分布式缓存">分布式缓存</h1>
+<p>集群化缓存，数据被存储在集群中多个或一个节点中。相较于本地缓存，有两个优势：可以通过调整读写策略保证数据的一致性，可通过集群部署和主从机制实现高可用。</p>
+<h2 id="特性和适用场景-2">特性和适用场景</h2>
+<p>其特性主要有：高性能、可拓展、高可用、易上手。<br>
+适合页面缓存、应用对象缓存、状态缓存和共享计算中间结果的场景。</p>
+<h1 id="cdn">CDN</h1>
+<p>多用于静态资源和影视频流，各种文件的加速。</p>
+<h1 id="流量削峰策略">流量削峰策略</h1>
+<p>对于业务流量的常态、可预测的增长我们可以使用扩容来解决，但是不可预测和活动带来的徒增流量会用扩容来解决在资源层面是不可行的。因此，应引入削峰策略来让高峰时期的吞吐量可控。</p>
+<h2 id="消息队列削峰">消息队列削峰</h2>
+<p>消息中间件是常用的削峰工具，常用的有Kafka、RocketMQ、ActiveMQ和RabbitMQ。这些中间件在存储方式、事务支持、持久化支持、吞吐量、顺序保证等方面都有差异，需要根据业务需求谨慎选取。</p>
+<h1 id="客户端削峰">客户端削峰</h1>
+<h2 id="答题">答题</h2>
+<p>类似于验证码，是一种有损的限流方式，除了削峰还可以防止作弊，通过分散请求来完成削峰。由于会对用户产生不好的体验，一般在其它手段都无法满足需求时使用2。</p>
+<h2 id="限制请求">限制请求</h2>
+<p>忽略请求：根据策略抛弃一些点击动作或网络请求<br>
+延迟请求：对请求做打散<br>
+这两种方式会带来公平性问题，因而要考虑舆情而慎用。</p>
+<h1 id="各种限流方法的局限性">各种限流方法的局限性</h1>
+<p>资源扩展：成本较高<br>
+数据缓存：无法应对写压力<br>
+消息削峰：无法应对对时延敏感的服务<br>
+客户端削峰：影响用户体验</p>
+<h1 id="服务降级">服务降级</h1>
+<p>可以通过将不重要、不紧急的服务或任务暂停使用或延迟使用来降级，从而确保核心服务的能力。</p>
+<h2 id="降级范围">降级范围</h2>
+<p>降级不是纯技术手段，受到业务性质的影响。在制定降级策略时应同产品、运营、上下游技术负责人等对业务和技术负责人对业务功能和技术链路进行梳理，明确可以保障和可以降级的服务。<br>
+除了服务降级，还可以考虑日志降级。</p>
+<h2 id="降级分类">降级分类</h2>
+<p>按时间上和峰值的相对位置，可以分为：提前降级和应急降级。<br>
+按策略的执行凡是，可以分为：手动降级和自动降级。</p>
+<h1 id="限流">限流</h1>
+<p>通过压测找到系统阈值，根据阈值制定拒绝策略，如抛弃或者排队。</p>
+<h1 id="原则总结">原则总结</h1>
+<h2 id="写操作基本原则">写操作基本原则</h2>
+<p>对于不可降级、时延敏感的的业务，以资源扩展为主、流量削峰为辅。<br>
+对于不可降级、时延宽松的业务，以削峰策略为主，资源扩展为辅。<br>
+对于非核心且占用资源较多的业务：优先考虑服务降级。<br>
+限流策略作为兜底（对于写操作，可能有部分场景不适用）</p>
+<h2 id="读操作基本原则">读操作基本原则</h2>
+<p>对于数据量小、变更频率低，接收弱一致的业务，本地缓存策略为主、辅以分布式缓存策略。<br>
+对于数据量大，变更频率低，一致性要求高的业务，一般以分布式缓存策略为主，辅以本地缓存。<br>
+对与多媒体和静态文件的分法，一般以cdn为主，缓存策略为辅<br>
+限流策略作为兜底。</p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://alexanderzopic.github.io/tag/xpDH0RHrz/" class="tag">
+                    高并发
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/YafHrj7Oq/" class="tag">
+                    系统设计
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://alexanderzopic.github.io/post/q9oXnxict/">
+                  <h3 class="post-title">
+                    服务的稳定性设计（一）流量预估
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

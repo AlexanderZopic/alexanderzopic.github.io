@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>服务的稳定性设计（一）流量预估 | Domination of Zopic</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://alexanderzopic.github.io/favicon.ico?v=1719477896937">
+<link rel="stylesheet" href="https://alexanderzopic.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="本文主要探讨稳定性保障的流量预估策略
+
+容量评估
+所谓容量，是指系统处于最大负载状态或者某项指标达到能接受的最大阈值时，系统对请求的最大处理能力。常用的技术衡量指标有QPS或者TPS等。通过容量评估我们可以梳理出应用和接口维度的容量需求。在..." />
+    <meta name="keywords" content="稳定性,系统设计" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://alexanderzopic.github.io">
+        <img src="https://alexanderzopic.github.io/images/avatar.png?v=1719477896937" class="site-logo">
+        <h1 class="site-title">Domination of Zopic</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于我
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      这里是Zopic形式化自己思维的地方<br/>
+This is where Zopic formalizes his thinking
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://alexanderzopic.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">服务的稳定性设计（一）流量预估</h2>
+            <div class="post-date">2024-06-19</div>
+            
+              <div class="feature-container" style="background-image: url('https://alexanderzopic.github.io/post-images/q9oXnxict.jpg')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>本文主要探讨稳定性保障的流量预估策略</p>
+<!-- more -->
+<h1 id="容量评估">容量评估</h1>
+<p>所谓容量，是指系统处于最大负载状态或者某项指标达到能接受的最大阈值时，系统对请求的最大处理能力。常用的技术衡量指标有QPS或者TPS等。通过容量评估我们可以梳理出应用和接口维度的容量需求。在互联网领域，尤其是2c业务，最常见的容量风险是高并发风险，因此，明确容量需求是稳定性设计的首要任务。</p>
+<ol>
+<li>
+<p>资源位评估<br>
+所谓资源位量级评估，是指对业务相关流量入口请求量峰值进行预估。对于没有直接客户端的业务，资源位量级应由上游调用方发起。<br>
+日常峰值，资源位的日常请求峰值，可通过业务大盘或资源位相关接口获取。<br>
+活动峰值，即资源位在活动场景下的请求可以基于历史数据和BI测算获取。<br>
+同一个资源位，日常和活动峰值往往相差甚远，做评估是应充分考虑其场景和特点。</p>
+</li>
+<li>
+<p>流量模型分析<br>
+根据上一步进行的资源位资源预估，我们可以得到业务流量入口的请求峰值预估值。基于入口的流量峰值，我们还要结合流量模型进一步对业务全链路进行梳理、分析、推算出传递下游应用、中间件、DB的压力。<br>
+常用的流量模型有业务漏斗模型和调用链路模型两种。<br>
+业务漏斗模型粒度较粗，调用链路模型对实现耦合严重，一般结合使用：先用业务漏斗模型梳理业务流程中的主要环节的流量峰值；然后针对每一个业务环节的流量峰值基于调用链路深入分析，从而梳理出对整个系统链路的容量需求。</p>
+</li>
+</ol>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://alexanderzopic.github.io/tag/5BZHBcdOj/" class="tag">
+                    稳定性
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/YafHrj7Oq/" class="tag">
+                    系统设计
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://alexanderzopic.github.io/post/Dge0qqoVb/">
+                  <h3 class="post-title">
+                    非功能性需求简明应对手册                                   
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

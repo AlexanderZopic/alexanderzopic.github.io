@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>kafka读书笔记（零）初识kafka | Domination of Zopic</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://alexanderzopic.github.io/favicon.ico?v=1719477896937">
+<link rel="stylesheet" href="https://alexanderzopic.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="kafka是什么？
+kafka是一个采用scala语言开发的，多分区、多副本的分布式消息系统，基本定位是一个分布式流式处理平台。
+kafka能承担怎样的角色，或者说kafka能做什么？
+消息系统，存储系统，流式处理平台
+kafka作为这些角..." />
+    <meta name="keywords" content="技术,kafka,中间件" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://alexanderzopic.github.io">
+        <img src="https://alexanderzopic.github.io/images/avatar.png?v=1719477896937" class="site-logo">
+        <h1 class="site-title">Domination of Zopic</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于我
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      这里是Zopic形式化自己思维的地方<br/>
+This is where Zopic formalizes his thinking
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://alexanderzopic.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">kafka读书笔记（零）初识kafka</h2>
+            <div class="post-date">2024-06-19</div>
+            
+              <div class="feature-container" style="background-image: url('https://alexanderzopic.github.io/post-images/jMYr87aN9.webp')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <h2 id="kafka是什么">kafka是什么？</h2>
+<p>kafka是一个采用scala语言开发的，多分区、多副本的分布式消息系统，基本定位是一个分布式流式处理平台。</p>
+<h2 id="kafka能承担怎样的角色或者说kafka能做什么">kafka能承担怎样的角色，或者说kafka能做什么？</h2>
+<p>消息系统，存储系统，流式处理平台</p>
+<h2 id="kafka作为这些角色的特性有哪些">kafka作为这些角色的特性有哪些？</h2>
+<p><strong>消息系统</strong>：系统解耦、冗余存储、流量削峰、缓冲、异步通信、扩展性、可恢复性。提供了消息顺序性保障和回溯消费的功能。<br>
+<strong>存储系统</strong>：因为拥有持久化的特性，所以只要不启动消息删除机制，就是一个持久化存储系统。<br>
+<strong>流式处理平台</strong>：kafka能为各种流失处理框架提供可靠的数据来源，并且拥有一个完整的流式处理库，比如窗口、连接、变换和聚合等各类操作，能很好的接入各种流式处理框架。</p>
+<p><em>kafka的性能测试：</em><br>
+[https://blog.csdn.net/weixin_42641909/article/details/89320999]</p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://alexanderzopic.github.io/tag/zNA0dS94q/" class="tag">
+                    技术
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/s_Y9xVa1r/" class="tag">
+                    kafka
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/GOVR3bDrmu/" class="tag">
+                    中间件
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://alexanderzopic.github.io/post/27XCo9MbB/">
+                  <h3 class="post-title">
+                    服务的稳定性设计（零）什么是稳定性
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

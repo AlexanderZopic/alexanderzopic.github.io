@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>服务的稳定性设计（零）什么是稳定性 | Domination of Zopic</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://alexanderzopic.github.io/favicon.ico?v=1719477896937">
+<link rel="stylesheet" href="https://alexanderzopic.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="什么是稳定性
+系统在破坏性事件发生时正确提供服务或功能的能力，在时间结束后恢复到正常状态的能力
+指标
+平均无故障时间：两相邻故障间隔内期间正常工作的平均时间
+平均恢复时间：从故障发生到恢复正常平均所需时间
+故障规模：每次发生故障的影响面
+故..." />
+    <meta name="keywords" content="稳定性,系统设计" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://alexanderzopic.github.io">
+        <img src="https://alexanderzopic.github.io/images/avatar.png?v=1719477896937" class="site-logo">
+        <h1 class="site-title">Domination of Zopic</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于我
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      这里是Zopic形式化自己思维的地方<br/>
+This is where Zopic formalizes his thinking
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://alexanderzopic.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">服务的稳定性设计（零）什么是稳定性</h2>
+            <div class="post-date">2024-06-19</div>
+            
+              <div class="feature-container" style="background-image: url('https://alexanderzopic.github.io/post-images/27XCo9MbB.jpg')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <h1 id="什么是稳定性">什么是稳定性</h1>
+<p>系统在破坏性事件发生时正确提供服务或功能的能力，在时间结束后恢复到正常状态的能力</p>
+<h1 id="指标">指标</h1>
+<p>平均无故障时间：两相邻故障间隔内期间正常工作的平均时间<br>
+平均恢复时间：从故障发生到恢复正常平均所需时间<br>
+故障规模：每次发生故障的影响面<br>
+故障频率：规定时间内发生故障的次数<br>
+波动范围：在受到外部干扰和冲击时，平均响应时间的波动范围</p>
+<h1 id="纵向稳定性">纵向稳定性</h1>
+<p>为了支撑一个场景或者一个产品，整条技术链路上一般不可能只有一个应用或一个模块，而会是一系列的应用或中间件，从客户端到最底层，整个链路的稳定性为纵向稳定性，也称全局稳定性。<br>
+为了爆照稳定性，业务主导方要联合关键节点的负责人共同制定方案：技术架构、开发联调、容量准备、全两路压测、应急预案等。</p>
+<h1 id="横向稳定性">横向稳定性</h1>
+<p>纵向稳定性关注点在节点之间的链路的稳定性，而节点自身的保障则需要更深入、更广泛的领域知识。设计、开发、测试、部署、运行，不同的阶段工作侧重点不同。其中容量评估、方案设计、接口限流、应急预案<br>
+压测支持等换季是需要服务端工程师重点保障的。</p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://alexanderzopic.github.io/tag/5BZHBcdOj/" class="tag">
+                    稳定性
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/YafHrj7Oq/" class="tag">
+                    系统设计
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://alexanderzopic.github.io/post/MR2jNsAvl/">
+                  <h3 class="post-title">
+                    算法数学知识备忘录
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>kafka读书笔记（四）分区与消费者 | Domination of Zopic</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://alexanderzopic.github.io/favicon.ico?v=1719477896937">
+<link rel="stylesheet" href="https://alexanderzopic.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="
+消费者分区分配策略：
+*
+
+RangeAssignor（跨度平均分配）
+RoundRobinAssignor（轮询调度分配）
+StickyAssignor（粘性分配）
+自定义分配策略
+消费者协调器和组协调器
+
+
+再均衡
+*
+
+再均衡时机
+..." />
+    <meta name="keywords" content="技术,kafka,中间件" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://alexanderzopic.github.io">
+        <img src="https://alexanderzopic.github.io/images/avatar.png?v=1719477896937" class="site-logo">
+        <h1 class="site-title">Domination of Zopic</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于我
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      这里是Zopic形式化自己思维的地方<br/>
+This is where Zopic formalizes his thinking
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://alexanderzopic.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">kafka读书笔记（四）分区与消费者</h2>
+            <div class="post-date">2024-06-19</div>
+            
+              <div class="feature-container" style="background-image: url('https://alexanderzopic.github.io/post-images/rkCMrFrxi.webp')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p><ul class="markdownIt-TOC">
+<li><a href="#%E6%B6%88%E8%B4%B9%E8%80%85%E5%88%86%E5%8C%BA%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5">消费者分区分配策略：</a><br>
+*
+<ul>
+<li><a href="#rangeassignor%E8%B7%A8%E5%BA%A6%E5%B9%B3%E5%9D%87%E5%88%86%E9%85%8D">RangeAssignor（跨度平均分配）</a></li>
+<li><a href="#roundrobinassignor%E8%BD%AE%E8%AF%A2%E8%B0%83%E5%BA%A6%E5%88%86%E9%85%8D">RoundRobinAssignor（轮询调度分配）</a></li>
+<li><a href="#stickyassignor%E7%B2%98%E6%80%A7%E5%88%86%E9%85%8D">StickyAssignor（粘性分配）</a></li>
+<li><a href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5">自定义分配策略</a></li>
+<li><a href="#%E6%B6%88%E8%B4%B9%E8%80%85%E5%8D%8F%E8%B0%83%E5%99%A8%E5%92%8C%E7%BB%84%E5%8D%8F%E8%B0%83%E5%99%A8">消费者协调器和组协调器</a></li>
+</ul>
+</li>
+<li><a href="#%E5%86%8D%E5%9D%87%E8%A1%A1">再均衡</a><br>
+*
+<ul>
+<li><a href="#%E5%86%8D%E5%9D%87%E8%A1%A1%E6%97%B6%E6%9C%BA">再均衡时机</a></li>
+<li><a href="#%E5%86%8D%E5%9D%87%E8%A1%A1%E8%BF%87%E7%A8%8B">再均衡过程</a></li>
+</ul>
+</li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+</ul>
+<br>
+<strong>kafka通过在集群中维护消费者组信息实现了消费者组机制</strong>，从而使得开发者能够通过调整消费和消费者组之间的关系来实现更灵活的消费模式。同时这也带来了一些<strong>问题</strong>：</p>
+<ul>
+<li>从抽象设计上讲，消费者组相当于在主题分区和消费者之间多加了一个逻辑层。</li>
+<li>从具体实现上讲，kafka选择将消费者组的信息全部放到集群中进行管理，而分区分配策略却是由每一个孤立的消费者决定的，分区与消费者之间的关系不仅取决于客户端，还取决于服务端。</li>
+</ul>
+<p>这种设计使得主题分区和消费者的分配关系复杂化，并且变动频繁。<br>
+为了保证业务的运行能够按照预期中的计划进行，那么掌握分区分配规则和分区分配的变化规则无疑是十分必要的。本文将会从这个角度出发对上述规则进行总结。</p>
+<h1 id="消费者分区分配策略">消费者分区分配策略：</h1>
+<p>前面提到，消费者客户端的参数partition.assignment.strategy来配置消费者与订阅主题之间的分区分配策略，该参数可以同时配置多个策略，彼此之间以逗号隔开。<br>
+kafka提供了三种基本分区分配策略：RangeAssignor、RoundRobinAssignor、StickAssignor。下面我简单介绍一下三种分配方式的思想和逻辑，更具体的例子和说明网上有很多，这里就不多赘述了。</p>
+<h3 id="rangeassignor跨度平均分配">RangeAssignor（跨度平均分配）</h3>
+<p>对于每一个主题，该策略会将消费者组内所有订阅这个主题的消费者按照名称字典序排序，然后为每个消费者划分固定的分区范围，如果不能平均分配，字典序靠前的消费者会被多分配一个分区。<br>
+但是由于一个消费者组有可能订阅多个主题，消费者的字典序又是固定的，那么当消费者组中的同一批消费者以该策略订阅了多个主题，字典序靠前的消费者将会被多分配不止一个分区。<br>
+可以看出<strong>该策略<em>不适合</em>同一消费者组下同一批消费者订阅多个主题，而多个主题下的分区数比消费者数要多的情况。</strong></p>
+<h3 id="roundrobinassignor轮询调度分配">RoundRobinAssignor（轮询调度分配）</h3>
+<p>将消费者组内的所有消费者及消费者以及消费者订阅的所有主题分区按照字典序排序，然后通过轮询方式逐个将分区依次分配给每个消费者。<br>
+与前一个分配方式不一样的地方在于，轮询调度分配是以消费者组为单位的，如果一个消费者组所有的消费者的订阅信息都是相同的，那么主题分区的分配将会是均匀的。假如订阅信息不同，那么在分配的时候，在多主题的视角下就不是完全的轮询分配，从而导致分区分配达不到最优。<br>
+总而言之，<strong>如果你能保证消费者组下所有消费者的订阅主题都是相同的，那么选取该策略能够保证分配达到最优。</strong></p>
+<h3 id="stickyassignor粘性分配">StickyAssignor（粘性分配）</h3>
+<p>该分配方式有三个原则：</p>
+<ul>
+<li>分区分配要尽可能均匀。</li>
+<li>分区的分配结果要尽可能与上次的分配结果保持一致。</li>
+<li>当前两个原则冲突时，第一个目标优先于第二个目标</li>
+</ul>
+<p>从结果上看，粘性分配策略要比前两个分配策略要优秀，当然，它的代码实现也复杂的多。假如重分配对业务的影响比较小，订阅关系也比较固定的情况下，使用这个分配方式是比较合理的。</p>
+<h3 id="自定义分配策略">自定义分配策略</h3>
+<p>除了上述的三种基本分区策略以外，开发者还可以通过实现接口的方式来自定义策略来实现更多功能。譬如，根据机架和ip地址来进行分配，或者使得一个分区可以分配给多个消费者消费。<br>
+有一点值得注意，由于<strong>位移信息是以消费者组为单位在集群中存储的</strong>，所以当一个组的多个消费者消费同一个分区时，会出现位移覆盖的情况。开发者可以通过外部存储来维护真正的消费进度。</p>
+<h3 id="消费者协调器和组协调器">消费者协调器和组协调器</h3>
+<p>从前文可以看出kafka的消费者分区分配策略设计上存在一个尖锐的矛盾：</p>
+<ul>
+<li>多个消费者配置的消费者策略可能并不相同，而它们之间又不得不共享一种消费策略。</li>
+</ul>
+<p>为了解决这个矛盾，每次新消费者加入的时候都消费者的分区分配都需要一个<strong>再均衡</strong>的过程，为此kafka供了消费者协调器（客户端实现）和组协调器（服务端实现），它们之间用一套组协调协议进行交互。<br>
+不过，消费者协调器和组协调器的概念是针对新版的客户端而言的。旧的不去客户端是通过zookeeper的watch机制，监听/consumers/ &lt;group&gt; /ids和/broker/ids路径来完成的。这种做法有两个弊病：</p>
+<ul>
+<li>这种方式下对zookpeer的相关路径分别进行监听，当触发再均衡策略操作时，一个消费组下的所有消费者会同时进行再均衡操作，而消费者不知道彼此操作的结果，可能导致kafka工作在一个不正确的状态。</li>
+<li>这种方式严重依赖zookeeper，假如zookeeper出现问题，譬如羊群效应和脑裂效应，kafka一样会出现问题。</li>
+</ul>
+<h1 id="再均衡">再均衡</h1>
+<p>前面我们说到消费者消费策略的协调实际上是一个再均衡的过程，在新版kafka里完成这一过程的分别是客户端的消费者协调器和服务端的组协调器。接下来我们从时机和方式来对再均衡过程进行描述：</p>
+<h3 id="再均衡时机">再均衡时机</h3>
+<ul>
+<li>有新的消费者加入消费组</li>
+<li>有消费者<strong>宕机</strong>下线，由于消费者的在线状态是通过心跳维持的，所以除了宕机之外，消费者的长时间GC、网络延迟等也会导致消费者的下线</li>
+<li>消费者主动退出消费者组</li>
+<li>消费者对应的组协调者节点发生了变更</li>
+<li>消费者内所订阅的任一主题或者主题的分区数量发生了变化</li>
+</ul>
+<h3 id="再均衡过程">再均衡过程</h3>
+<p>再均衡的过程需要经过四个阶段<br>
+<strong>第一阶段：</strong><br>
+消费者需要确定它所属的消费者组对应的组协调者在哪一个broker上，并创建与broker互相通信的网络连接。具体分配在哪一个节点上，由服务端对消费者的组id进行映射操作获得。<br>
+<strong>第二阶段：</strong><br>
+当成功寻找到消费者组对应的协调器之后就进入加入消费者组的阶段，此阶段会向组协调器发送请求，并处理响应。如果是原有的消费者重新加入消费组，那么在发送请求之前还要执行一些准备工作，由于篇幅原因，这里就不展开细讲了。<br>
+消费者在发送请求成功之后会阻塞等待服务端的响应。服务端在接到请求后会交由自己的组协调器处理，组协调器会验证请求的合法性，并从请求中获取或者自己生成一个消费者唯一标识member_id。<br>
+<strong>之后组协调者会为经历两个步骤：</strong><br>
+选举消费组的leader：组协调器根据算法选举leader，一般都选取第一个加入组的消费者为leader，leader下线则在在线消费者中随机选择一个<br>
+选举分区分配策略：组协调器会统计所有消费者的消费策略，选择消费者最多的那个消费策略。<br>
+<strong>第三阶段：</strong><br>
+leader消费者根据在第二阶段选举出来的分区策略实施具体的分区策略，在此之后将需要分配的方案同步给各个消费者，此时leader消费者并不是直接和其余消费者同步，而是通过组协调器来转发的。<br>
+在使用组协调器的版本中，消费者元数据信息和对应的组协调器处于同一个broker下，免去了中间轮转的开销。<br>
+<strong>第四阶段：</strong><br>
+加入成功以后，消费者通过向组协调器发送心跳维持它们与消费者组的从属关系，以及对分区的所有权。当消费者心跳超时，或者主动下线，那么在一段时间之后，组协调器会执行再均衡策略。</p>
+<h1 id="总结">总结</h1>
+<p>消费者之间的消费策略协调过程可以视为一种再均衡过程，在旧版kafka中是依靠zookpeer的watch机制实现的，在新版kafka中则是通过消费者协调器和组协调器之间的交互完成。</p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://alexanderzopic.github.io/tag/zNA0dS94q/" class="tag">
+                    技术
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/s_Y9xVa1r/" class="tag">
+                    kafka
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/GOVR3bDrmu/" class="tag">
+                    中间件
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://alexanderzopic.github.io/post/hiWpmzBtw/">
+                  <h3 class="post-title">
+                    kafka读书笔记（三）浅谈消费者
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

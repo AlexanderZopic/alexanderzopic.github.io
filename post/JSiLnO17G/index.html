@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>kafka读书笔记（二）浅谈生产者 | Domination of Zopic</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://alexanderzopic.github.io/favicon.ico?v=1719477896937">
+<link rel="stylesheet" href="https://alexanderzopic.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="
+生产者的生命周期是怎样的？
+生产者做了些什么？
+生产者的可配置的地方有哪些？
+生产者线程模型是什么样的？
+
+
+生产者的生命周期是怎样的？
+
+配置生产者客户端参数并创建相应实例
+构建待发送的消息
+发送消息
+关闭消费者实例
+
+生产者做了些什么..." />
+    <meta name="keywords" content="技术,kafka,中间件" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://alexanderzopic.github.io">
+        <img src="https://alexanderzopic.github.io/images/avatar.png?v=1719477896937" class="site-logo">
+        <h1 class="site-title">Domination of Zopic</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于我
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      这里是Zopic形式化自己思维的地方<br/>
+This is where Zopic formalizes his thinking
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://alexanderzopic.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">kafka读书笔记（二）浅谈生产者</h2>
+            <div class="post-date">2024-06-19</div>
+            
+              <div class="feature-container" style="background-image: url('https://alexanderzopic.github.io/post-images/JSiLnO17G.webp')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p><ul class="markdownIt-TOC">
+<li><a href="#%E7%94%9F%E4%BA%A7%E8%80%85%E7%9A%84%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F%E6%98%AF%E6%80%8E%E6%A0%B7%E7%9A%84">生产者的生命周期是怎样的？</a></li>
+<li><a href="#%E7%94%9F%E4%BA%A7%E8%80%85%E5%81%9A%E4%BA%86%E4%BA%9B%E4%BB%80%E4%B9%88">生产者做了些什么？</a></li>
+<li><a href="#%E7%94%9F%E4%BA%A7%E8%80%85%E7%9A%84%E5%8F%AF%E9%85%8D%E7%BD%AE%E7%9A%84%E5%9C%B0%E6%96%B9%E6%9C%89%E5%93%AA%E4%BA%9B">生产者的可配置的地方有哪些？</a></li>
+<li><a href="#%E7%94%9F%E4%BA%A7%E8%80%85%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B%E6%98%AF%E4%BB%80%E4%B9%88%E6%A0%B7%E7%9A%84">生产者线程模型是什么样的？</a></li>
+</ul>
+</p>
+<h1 id="生产者的生命周期是怎样的">生产者的生命周期是怎样的？</h1>
+<ol>
+<li>配置生产者客户端参数并创建相应实例</li>
+<li>构建待发送的消息</li>
+<li>发送消息</li>
+<li>关闭消费者实例</li>
+</ol>
+<h1 id="生产者做了些什么">生产者做了些什么？</h1>
+<ol>
+<li>将消息和消息相关信息封入ProducerRecord</li>
+<li>通过拦截器对消息进行过滤或修改</li>
+<li>使用序列化器将对象换成字节数组（broker只接收字节数组）</li>
+<li>使用分区器指定消息对应消息分区</li>
+<li>用三种方式发送消息，同步、异步、发后即忘</li>
+</ol>
+<h1 id="生产者的可配置的地方有哪些">生产者的可配置的地方有哪些？</h1>
+<ul>
+<li>初始化配置：<br>
+broker的ip端口清单，指定消息key和value序列化器<br>
+拦截器、序列化器、分区器都可以替换，但是生产者和消费者的序列化器和反序列化器要适配。</li>
+<li>acks：<br>
+决定消息的可靠性</li>
+<li>max.request.size：</li>
+<li>限制生产者客户端能发送消息最大值。</li>
+<li>消息发送失败重试次数和重试间隔</li>
+<li>闲置连接的关闭时间</li>
+<li>linger.ms：<br>
+决定ProducerBatch发送的时间间隔，提高它坏处是增加消息延迟，好处是会提升一定的吞吐量。</li>
+</ul>
+<h1 id="生产者线程模型是什么样的">生产者线程模型是什么样的？</h1>
+<p>由一个主线程和发送者线程构成<br>
+<img src="https://alexanderzopic.github.io/post-images/1718757227619.png" alt="" loading="lazy"></p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://alexanderzopic.github.io/tag/zNA0dS94q/" class="tag">
+                    技术
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/s_Y9xVa1r/" class="tag">
+                    kafka
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/GOVR3bDrmu/" class="tag">
+                    中间件
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://alexanderzopic.github.io/post/ika5IZ1UN/">
+                  <h3 class="post-title">
+                    kafka读书笔记（一）kafka基本框架
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

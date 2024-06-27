@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://alexanderzopic.github.io</id>
+    <title>Domination of Zopic</title>
+    <updated>2024-06-27T08:44:59.236Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://alexanderzopic.github.io"/>
+    <link rel="self" href="https://alexanderzopic.github.io/atom.xml"/>
+    <subtitle>这里是Zopic形式化自己思维的地方&lt;br/&gt;
+This is where Zopic formalizes his thinking</subtitle>
+    <logo>https://alexanderzopic.github.io/images/avatar.png</logo>
+    <icon>https://alexanderzopic.github.io/favicon.ico</icon>
+    <rights>All rights reserved 2024, Domination of Zopic</rights>
+    <entry>
+        <title type="html"><![CDATA[如何保证资金安全？——资损分析篇]]></title>
+        <id>https://alexanderzopic.github.io/post/S6mJNM-c8/</id>
+        <link href="https://alexanderzopic.github.io/post/S6mJNM-c8/">
+        </link>
+        <updated>2024-06-24T11:32:11.000Z</updated>
+        <summary type="html"><![CDATA[<p>本文简单谈一谈资损风险分析。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>本文简单谈一谈资损风险分析。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[高并发解决方案]]></title>
+        <id>https://alexanderzopic.github.io/post/npGx3EwEo/</id>
+        <link href="https://alexanderzopic.github.io/post/npGx3EwEo/">
+        </link>
+        <updated>2024-06-20T07:10:53.000Z</updated>
+        <summary type="html"><![CDATA[<p>对于2c业务，模型上并没有2b业务那么复杂，但是往往需要面对高并发问题。本文将体系化地解读高并发应对策略，包括资源扩展、流量削峰、数据缓存、服务降级、限流等。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>对于2c业务，模型上并没有2b业务那么复杂，但是往往需要面对高并发问题。本文将体系化地解读高并发应对策略，包括资源扩展、流量削峰、数据缓存、服务降级、限流等。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[服务的稳定性设计（一）流量预估]]></title>
+        <id>https://alexanderzopic.github.io/post/q9oXnxict/</id>
+        <link href="https://alexanderzopic.github.io/post/q9oXnxict/">
+        </link>
+        <updated>2024-06-19T01:31:48.000Z</updated>
+        <summary type="html"><![CDATA[<p>本文主要探讨稳定性保障的流量预估策略</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>本文主要探讨稳定性保障的流量预估策略</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[非功能性需求简明应对手册                                   ]]></title>
+        <id>https://alexanderzopic.github.io/post/Dge0qqoVb/</id>
+        <link href="https://alexanderzopic.github.io/post/Dge0qqoVb/">
+        </link>
+        <updated>2024-06-19T01:08:53.000Z</updated>
+        <summary type="html"><![CDATA[<p><strong>本文目的是在项目开发中为开发者提供一个思考地图，比起答案，更重要的是问题</strong></p>
+]]></summary>
+        <content type="html"><![CDATA[<p><strong>本文目的是在项目开发中为开发者提供一个思考地图，比起答案，更重要的是问题</strong></p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[kafka读书笔记（六）可靠性探究之日志同步机制]]></title>
+        <id>https://alexanderzopic.github.io/post/lX-J1xnP9/</id>
+        <link href="https://alexanderzopic.github.io/post/lX-J1xnP9/">
+        </link>
+        <updated>2024-06-19T00:43:04.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[kafka读书笔记（五）消息可靠性探究之客户端]]></title>
+        <id>https://alexanderzopic.github.io/post/NMSWVMsCb/</id>
+        <link href="https://alexanderzopic.github.io/post/NMSWVMsCb/">
+        </link>
+        <updated>2024-06-19T00:41:14.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[kafka读书笔记（四）分区与消费者]]></title>
+        <id>https://alexanderzopic.github.io/post/rkCMrFrxi/</id>
+        <link href="https://alexanderzopic.github.io/post/rkCMrFrxi/">
+        </link>
+        <updated>2024-06-19T00:40:12.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[kafka读书笔记（三）浅谈消费者]]></title>
+        <id>https://alexanderzopic.github.io/post/hiWpmzBtw/</id>
+        <link href="https://alexanderzopic.github.io/post/hiWpmzBtw/">
+        </link>
+        <updated>2024-06-19T00:39:09.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[kafka读书笔记（二）浅谈生产者]]></title>
+        <id>https://alexanderzopic.github.io/post/JSiLnO17G/</id>
+        <link href="https://alexanderzopic.github.io/post/JSiLnO17G/">
+        </link>
+        <updated>2024-06-19T00:32:41.000Z</updated>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[kafka读书笔记（一）kafka基本框架]]></title>
+        <id>https://alexanderzopic.github.io/post/ika5IZ1UN/</id>
+        <link href="https://alexanderzopic.github.io/post/ika5IZ1UN/">
+        </link>
+        <updated>2024-06-19T00:28:48.000Z</updated>
+    </entry>
+</feed>

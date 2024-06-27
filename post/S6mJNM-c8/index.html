@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>如何保证资金安全？——资损分析篇 | Domination of Zopic</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://alexanderzopic.github.io/favicon.ico?v=1719477896937">
+<link rel="stylesheet" href="https://alexanderzopic.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="本文简单谈一谈资损风险分析。
+
+
+资损风险分析
+
+分析要素——我们应该关心哪些方面
+技术风险
+
+
+
+
+涉及到资金的业务有很多，譬如运营活动、支付、清结算等，稍有不慎就可能导致资损。资损的来源有很多：产品设计缺陷、系统运行异常、员工操作失误等..." />
+    <meta name="keywords" content="资金,结算,系统设计" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://alexanderzopic.github.io">
+        <img src="https://alexanderzopic.github.io/images/avatar.png?v=1719477896937" class="site-logo">
+        <h1 class="site-title">Domination of Zopic</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于我
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      这里是Zopic形式化自己思维的地方<br/>
+This is where Zopic formalizes his thinking
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://alexanderzopic.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">如何保证资金安全？——资损分析篇</h2>
+            <div class="post-date">2024-06-24</div>
+            
+              <div class="feature-container" style="background-image: url('https://alexanderzopic.github.io/post-images/S6mJNM-c8.jpg')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p>本文简单谈一谈资损风险分析。</p>
+<!-- more -->
+<p><ul class="markdownIt-TOC">
+<li><a href="#%E8%B5%84%E6%8D%9F%E9%A3%8E%E9%99%A9%E5%88%86%E6%9E%90">资损风险分析</a>
+<ul>
+<li><a href="#%E5%88%86%E6%9E%90%E8%A6%81%E7%B4%A0%E6%88%91%E4%BB%AC%E5%BA%94%E8%AF%A5%E5%85%B3%E5%BF%83%E5%93%AA%E4%BA%9B%E6%96%B9%E9%9D%A2">分析要素——我们应该关心哪些方面</a></li>
+<li><a href="#%E6%8A%80%E6%9C%AF%E9%A3%8E%E9%99%A9">技术风险</a></li>
+</ul>
+</li>
+</ul>
+<br>
+涉及到资金的业务有很多，譬如运营活动、支付、清结算等，稍有不慎就可能导致资损。资损的来源有很多：产品设计缺陷、系统运行异常、员工操作失误等。资损不仅限于金额，还包括一切可用现金评估的资产。<br>
+为了确保资金安全，在进行资金相关需求落地时，应特别关注资金的安全问题。</p>
+<h1 id="资损风险分析">资损风险分析</h1>
+<p>在这个阶段，我们可以整理出业务潜在的资损场景，并针对性性地设计防控方案，如系统设计、核对规则和监控预警策略等。</p>
+<h2 id="分析要素我们应该关心哪些方面">分析要素——我们应该关心哪些方面</h2>
+<p>一般会从<em>资金流、用户交互、资金规则、时效性、异常</em>5个方面入手，每个方面都涉及到大量细节，在分析时应充分挖掘。<br>
+资金流：需要分析金额、币种、账户、资金流向、额度限制、人工处理流程、后天操作规范等。以金额为例，包含金额在上下游系统的一致性，计算金额的正确性，逆向金额不大于正向金额等。<br>
+用户交互：主要分析客户端显示内容，各渠道透出信息是否一致，文案是否有歧义等·。<br>
+资金规则：包括所有资金相关的规则，譬如额度、人群、频次等等。<br>
+时效性：有些业务会因为时间造成资金变化，譬如还款逾期等。<br>
+异常·：网络异常、系统异常、下游异常、配置错误、触发限流等。注意，先分析资金流、用户交互、资金规则和时效性，在此基础上再考虑异常问题。</p>
+<h2 id="技术风险">技术风险</h2>
+<p>基于上一步归纳出的方面，我们可以从技术角度挖掘出其中的风险场景，主要有并发、幂等、分布式失误、服务超时、接口规约、数据计算精度、配置校验等。这些场景下导致的问题，多为一致性问题。<br>
+并发：多线程、进程对同一数据进行读写操作可能导致一致性问题。若使用缓存，还存在缓存和数据库的一致性问题。多数据中心的热备策略，也有可能造成不一致。</p>
+<ul>
+<li>幂等：若幂等设计存在缺陷，在用户重复请求、网络重发、超时重试等情况下，可能出现请求结果与预期不一致的情况，如重复下单、重复扣款等。</li>
+<li>分布式事务：分布式事务事务提交和回滚的设计不当会导致数据不一致。</li>
+<li>服务超时：服务依赖的执行结果不确定，可能造成上下游数据不一致，一般通过幂等解决。</li>
+<li>接口规约：接口设计不规范可能导致上下游理解不一致，进而误用。</li>
+<li>数据计算精度：使用浮点数容易带来精度问题，推荐使用最小货币单位，将浮点数装换为整数计算。</li>
+<li>配置校验：运营配置校验不足，导致配置结果与预期不一致。</li>
+</ul>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://alexanderzopic.github.io/tag/VmRMU5U5M/" class="tag">
+                    资金
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/Sf-OPhJ1vz/" class="tag">
+                    结算
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/YafHrj7Oq/" class="tag">
+                    系统设计
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://alexanderzopic.github.io/post/npGx3EwEo/">
+                  <h3 class="post-title">
+                    高并发解决方案
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

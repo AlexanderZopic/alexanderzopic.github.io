@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>kafka读书笔记（五）消息可靠性探究之客户端 | Domination of Zopic</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://alexanderzopic.github.io/favicon.ico?v=1719477896937">
+<link rel="stylesheet" href="https://alexanderzopic.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="
+消息保障传输
+幂等和事务
+
+幂等
+事务
+
+
+总结
+
+
+对于一个消息中间件，如何保证消息的可靠性无疑是设计者需要解决的核心问题之一，kafka自然也不例外。同时，由于kafka是一个分布式集群，并且具有持久化存储的功能，那么消息的可靠性不仅..." />
+    <meta name="keywords" content="" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://alexanderzopic.github.io">
+        <img src="https://alexanderzopic.github.io/images/avatar.png?v=1719477896937" class="site-logo">
+        <h1 class="site-title">Domination of Zopic</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于我
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      这里是Zopic形式化自己思维的地方<br/>
+This is where Zopic formalizes his thinking
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://alexanderzopic.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">kafka读书笔记（五）消息可靠性探究之客户端</h2>
+            <div class="post-date">2024-06-19</div>
+            
+              <div class="feature-container" style="background-image: url('https://alexanderzopic.github.io/post-images/NMSWVMsCb.webp')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p><ul class="markdownIt-TOC">
+<li><a href="#%E6%B6%88%E6%81%AF%E4%BF%9D%E9%9A%9C%E4%BC%A0%E8%BE%93">消息保障传输</a></li>
+<li><a href="#%E5%B9%82%E7%AD%89%E5%92%8C%E4%BA%8B%E5%8A%A1">幂等和事务</a>
+<ul>
+<li><a href="#%E5%B9%82%E7%AD%89">幂等</a></li>
+<li><a href="#%E4%BA%8B%E5%8A%A1">事务</a></li>
+</ul>
+</li>
+<li><a href="#%E6%80%BB%E7%BB%93">总结</a></li>
+</ul>
+<br>
+对于一个消息中间件，如何保证消息的可靠性无疑是设计者需要解决的核心问题之一，kafka自然也不例外。同时，由于kafka是一个分布式集群，并且具有持久化存储的功能，那么消息的可靠性不仅依赖于消费者和生产者与服务集群之间的交互机制，还会涉及到服务集群内部的信息管理和节点管理机制。本文将会从客户端角度来分析kafka的消息可靠性保证。</p>
+<h1 id="消息保障传输">消息保障传输</h1>
+<p>一般而言，消息中间件的<strong>消息传输保障</strong>有3个层次，分别如下：</p>
+<ul>
+<li>at most once：至多一次。消息可能会丢失，但绝对不会重复传输。</li>
+<li>at least once：最少一次。消息绝不会丢失，但可能会重复传输。</li>
+<li>exactly once：恰好一次。每条消息肯定会被传输一次且仅传输一次。</li>
+</ul>
+<p><strong>从生产者角度分析：</strong><br>
+这里为了讨论的方便，我们先假设当生产者向kafka发送消息时，一旦消息被提交到日志文件，由于多副本机制的存在，这条消息就不会丢失。从这个假设出发，在发送过程中，会导致异常的最大因素就是网络：kafka生产者长时间收不到回复，无法确定消息是否写入了日志，这个时候生产者就会进行重试，从而使得消息重复写入的情况出现。因此，<strong>kafka提供的消息传输保障为至少一次</strong>。<br>
+<strong>从消费者角度分析：</strong><br>
+对消费者而言，消费者<strong>处理消息和提交消费位移的顺序</strong>在很大程度上决定了消费者提供了哪一种消费传输保障。假如在消息处理之前就提交位移，那么就是at most once，假如在消息处理之后才提交位移，那么就是at least once。</p>
+<h1 id="幂等和事务">幂等和事务</h1>
+<p>kafka从0.11.0.0版本引入了幂等和事务两个特性，一次来实现EOS（exactly once semantics，精确一次处理语义）</p>
+<h2 id="幂等">幂等</h2>
+<p>所谓幂等，简单地说就是对接口的多次调用所产生的结果和调用一次是一致的。根据前文的推论，kafka生产者会出现重复写入的情况，幂等正式为此而设计的。<br>
+生产者启用使用幂等需要配置两个参数，一个重试数，一个是ack参数，并且重试数必须大于0，ack参数必须等于负一。<br>
+关于ack参数的意义会在下文提及，现在你只要知道ack=-1保证了消息一旦在集群中的不可丢失性。<br>
+为了实现生产者的幂等性，kafka引入了PID（producer id）和序列号两个概念。每个生产者在初始化时都会被分配一个PID，PID对于生产者是透明的，序列号则由生产者来维护。PID和序列号信息会被写入到生产者的写入请求中，broker端在内存中会每一对&lt;PID, 分区&gt;维护一个序列号。对于收到每一条的信息，只有当新序列号比旧序列号大一时才会接受。<br>
+可以看出，这种机制只能保证&lt;PID，分区&gt;下的幂等，<strong>单个生产者会话中单分区的幂等</strong>。</p>
+<h2 id="事务">事务</h2>
+<p>幂等不能跨分区运转，而事务可以弥补这个缺陷。<br>
+事务可以保证对于多个分区的写入操作的原子性。举个例子，对流式应用而言一个典型的模式是“consume transfor produce”。这种情况下，消费和生产并存，应用程序从某个主题中消费消息，然后经过一系列转换写入另一个主题。kafka中的事务可以将消费消息、生产消息、提交位移操作当原子操作处理。<br>
+为了<strong>开启事务</strong>，需要满足以下几个<strong>条件</strong>：</p>
+<ul>
+<li>事务需要生产者开启幂等特性</li>
+<li>事务需要生产者对transaction.id进行指定，并将enable.idempotence设为true。</li>
+</ul>
+<p>事务id和pid一一对应，新的生产者会顶掉旧的生产者，<strong>一个事务id不能同时被两个生产者使用，否则会报错</strong>。</p>
+<p><strong>从生产者的角度分析</strong>，通过事务，kafka可以保证跨<strong>生产者的消息幂等发送</strong>，以及<strong>跨生产者事务恢复</strong>。前者意味着新生产者工作时，拥有同样事务id的生产者实例会不再工作。后者指当某个生产者宕机后，新生产者实例可以保证任何未完成的旧事务要么被提交要么被终止，从而使得新生产者实例从一个正常的状态进行工作。</p>
+<p><strong>从消费者的角度分析</strong>，事务能保证的语义较弱，处于以下原因，kafka并不能保证已提交事务中的所有消息都能被消费：</p>
+<ul>
+<li>对于采用日志压缩策略的主题而言，事务中的某些消息有可能被清理——相同key的消息，后写入的消息会覆盖之前写入的消息。</li>
+<li>当老的日志分段被清理时，可能会丢失部分或全部日志信息。</li>
+<li>消费者可以通过seek方法访问任意offset消息，事务可以被消费者跳过。</li>
+<li>消费者在消费时可能没有分配到事务内的所有分区，它就不能获得所有的事务消息。<br>
+由于事务的实现比较复杂，这里不多赘述了。</li>
+</ul>
+<h1 id="总结">总结</h1>
+<p>生产者的可靠性保证为至少一次<br>
+消费者的提交和消费顺序决定了消费端的可靠性保证<br>
+kafka的幂等支持单个生产者会话下的单分区操作的幂等<br>
+kafka的事务可以保证对于多个分区的写入操作的原子性</p>
+
+            </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://alexanderzopic.github.io/post/rkCMrFrxi/">
+                  <h3 class="post-title">
+                    kafka读书笔记（四）分区与消费者
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

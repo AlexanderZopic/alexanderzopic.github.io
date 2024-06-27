@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>kafka读书笔记（三）浅谈消费者 | Domination of Zopic</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://alexanderzopic.github.io/favicon.ico?v=1719477896937">
+<link rel="stylesheet" href="https://alexanderzopic.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="
+消费者和消费者组
+消费者组对于消费者的影响
+消费者组对消息投递模式的影响
+客户端开发
+
+
+消费者负责订阅kafka中的主题，并且从订阅的主题上拉取消息。同时，每个消费者都隶属于，并且仅仅隶属于一个消费者组。每一个消费者组都会有一个唯一的名..." />
+    <meta name="keywords" content="技术,kafka,中间件" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://alexanderzopic.github.io">
+        <img src="https://alexanderzopic.github.io/images/avatar.png?v=1719477896937" class="site-logo">
+        <h1 class="site-title">Domination of Zopic</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于我
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      这里是Zopic形式化自己思维的地方<br/>
+This is where Zopic formalizes his thinking
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://alexanderzopic.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">kafka读书笔记（三）浅谈消费者</h2>
+            <div class="post-date">2024-06-19</div>
+            
+              <div class="feature-container" style="background-image: url('https://alexanderzopic.github.io/post-images/hiWpmzBtw.webp')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p><ul class="markdownIt-TOC">
+<li><a href="#%E6%B6%88%E8%B4%B9%E8%80%85%E5%92%8C%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84">消费者和消费者组</a></li>
+<li><a href="#%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84%E5%AF%B9%E4%BA%8E%E6%B6%88%E8%B4%B9%E8%80%85%E7%9A%84%E5%BD%B1%E5%93%8D">消费者组对于消费者的影响</a></li>
+<li><a href="#%E6%B6%88%E8%B4%B9%E8%80%85%E7%BB%84%E5%AF%B9%E6%B6%88%E6%81%AF%E6%8A%95%E9%80%92%E6%A8%A1%E5%BC%8F%E7%9A%84%E5%BD%B1%E5%93%8D">消费者组对消息投递模式的影响</a></li>
+<li><a href="#%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%BC%80%E5%8F%91">客户端开发</a></li>
+</ul>
+<br>
+消费者负责订阅kafka中的主题，并且从订阅的主题上拉取消息。同时，<strong>每个消费者都隶属于，并且仅仅隶属于一个消费者组</strong>。每一个消费者组都会有一个唯一的名称，消费者在消费前需要指定所属消费组的名称。</p>
+<h1 id="消费者和消费者组">消费者和消费者组</h1>
+<p>消费者组的相关信息存储于kafka的集群中，一个消费者组下的信息包括：<br>
+消费者组下有哪些消费者（通过消费者id标识）<br>
+表示消费者组对主题分区消费程度的offset（由消费者提交，由于消费者组内只有一个消费者在消费，所以offset的粒度是消费者组级别的）<br>
+记录主题分区被哪个消费者所消费，当有消费者加入时触发创建。</p>
+<h1 id="消费者组对于消费者的影响">消费者组对于消费者的影响</h1>
+<p>每一个主题分区只能被一个消费组中的一个消费者所消费。<br>
+kafka的主题分区分配规则以消费者组为单位</p>
+<h1 id="消费者组对消息投递模式的影响">消费者组对消息投递模式的影响</h1>
+<p>对于消费中间件，一般来说有两种投递模式：点对点模式和发布订阅（广播）模式。<br>
+由于消费者组概念的存在，<strong>kafka投递模式可以在点对点模式和发布订阅模式这个两个极端</strong>之间调整：<br>
+如果所有消费者都隶属于一个消费者组，每条消息只会被一个消费者消费，相当于点对点模式。<br>
+如果所有的消费者都隶属于不同的消费者组，那么一条消息会被所有消费者消费，相当于发布订阅（广播）模式。</p>
+<h1 id="客户端开发">客户端开发</h1>
+<p>一个正常的消费逻辑需要具备以下几个步骤：</p>
+<ol>
+<li>配置客户端参数，创建相应的消费者实例</li>
+<li>订阅主题分区</li>
+<li>拉取消息并消费</li>
+<li>提交消费位移</li>
+<li>关闭消费者实例</li>
+</ol>
+<p><strong>配置客户端参数：</strong><br>
+bootstrap.servers：kafka的broker列表，指明ip和port<br>
+group.id：消费者隶属消费组的名称<br>
+key.deserializer和vaule.deserializer：key和value的反序列化器</p>
+<p><strong>订阅主题分区：</strong><br>
+客户端可以指定需要订阅的主题，也可以指定特定的主题分区，具体的主题分区信息可以通过通过向集群查询获得。客户端在未指定具体分区时会由分配规则分配分区。<br>
+客户端可以主动解除订阅。</p>
+<p><strong>反序列化：</strong><br>
+与生产者的序列化器搭配使用，开发者可以自定义反序列化器。</p>
+<p><strong>拉取消息并消费：</strong><br>
+kafka的消费者以轮询的拉模式消费消息，开发者可以指定轮询的间隔。消费者的拉取动作（poll函数）的内部实现十分复杂，涉及到消费位移、消费者协调器、组协调器、消费者的选举、分区分配的分发、再均衡的逻辑、心跳等内容，之后的章节会提到这些内容。</p>
+<p><strong>位移提交：</strong><br>
+位移offset在主题分区范围内递增且唯一，每个offset对应唯一一条消息，消息之间通过offset保证顺序。<br>
+poll返回的是未提交的消息，提交的时机（消费前、消费后）和方式（同步、异步、批量）由消费者决定，提交的消费位移会被集群持久化到磁盘。<br>
+假如集群中没有相应的offset信息，或者有特殊的需求（比如回溯）的情况下，消费者可以通过seek方法从特定位置读取消息。</p>
+<p><strong>消费者拦截器：</strong><br>
+消费者会在poll方法之前调用拦截器的onConsume方法来对消息进行定制化操作，比如修改和过滤。</p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://alexanderzopic.github.io/tag/zNA0dS94q/" class="tag">
+                    技术
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/s_Y9xVa1r/" class="tag">
+                    kafka
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/GOVR3bDrmu/" class="tag">
+                    中间件
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://alexanderzopic.github.io/post/JSiLnO17G/">
+                  <h3 class="post-title">
+                    kafka读书笔记（二）浅谈生产者
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

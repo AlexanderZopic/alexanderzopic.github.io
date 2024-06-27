@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>非功能性需求简明应对手册                                    | Domination of Zopic</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://alexanderzopic.github.io/favicon.ico?v=1719477896937">
+<link rel="stylesheet" href="https://alexanderzopic.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="本文目的是在项目开发中为开发者提供一个思考地图，比起答案，更重要的是问题
+
+
+稳定性
+
+如何保障一个系统的纵向稳定性？
+
+
+可测性设计
+
+可操作
+可灰度
+可压测
+
+压测支持
+压测开关
+
+
+资金安全设计
+
+潜在的风险场景：
+
+
+
+
+兼容性
+
+..." />
+    <meta name="keywords" content="系统设计" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://alexanderzopic.github.io">
+        <img src="https://alexanderzopic.github.io/images/avatar.png?v=1719477896937" class="site-logo">
+        <h1 class="site-title">Domination of Zopic</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于我
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      这里是Zopic形式化自己思维的地方<br/>
+This is where Zopic formalizes his thinking
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://alexanderzopic.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">非功能性需求简明应对手册                                   </h2>
+            <div class="post-date">2024-06-19</div>
+            
+              <div class="feature-container" style="background-image: url('https://alexanderzopic.github.io/post-images/Dge0qqoVb.jpg')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p><strong>本文目的是在项目开发中为开发者提供一个思考地图，比起答案，更重要的是问题</strong></p>
+<!-- more -->
+<p><ul class="markdownIt-TOC">
+<li><a href="#%E7%A8%B3%E5%AE%9A%E6%80%A7">稳定性</a>
+<ul>
+<li><a href="#%E5%A6%82%E4%BD%95%E4%BF%9D%E9%9A%9C%E4%B8%80%E4%B8%AA%E7%B3%BB%E7%BB%9F%E7%9A%84%E7%BA%B5%E5%90%91%E7%A8%B3%E5%AE%9A%E6%80%A7">如何保障一个系统的纵向稳定性？</a></li>
+</ul>
+</li>
+<li><a href="#%E5%8F%AF%E6%B5%8B%E6%80%A7%E8%AE%BE%E8%AE%A1">可测性设计</a>
+<ul>
+<li><a href="#%E5%8F%AF%E6%93%8D%E4%BD%9C">可操作</a></li>
+<li><a href="#%E5%8F%AF%E7%81%B0%E5%BA%A6">可灰度</a></li>
+<li><a href="#%E5%8F%AF%E5%8E%8B%E6%B5%8B">可压测</a>
+<ul>
+<li><a href="#%E5%8E%8B%E6%B5%8B%E6%94%AF%E6%8C%81">压测支持</a></li>
+<li><a href="#%E5%8E%8B%E6%B5%8B%E5%BC%80%E5%85%B3">压测开关</a></li>
+</ul>
+</li>
+<li><a href="#%E8%B5%84%E9%87%91%E5%AE%89%E5%85%A8%E8%AE%BE%E8%AE%A1">资金安全设计</a>
+<ul>
+<li><a href="#%E6%BD%9C%E5%9C%A8%E7%9A%84%E9%A3%8E%E9%99%A9%E5%9C%BA%E6%99%AF">潜在的风险场景：</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%E5%85%BC%E5%AE%B9%E6%80%A7">兼容性</a>
+<ul>
+<li><a href="#%E9%80%BB%E8%BE%91%E5%85%BC%E5%AE%B9">逻辑兼容</a></li>
+<li><a href="#%E6%95%B0%E6%8D%AE%E5%BA%93%E5%85%BC%E5%AE%B9">数据库兼容</a></li>
+<li><a href="#%E4%BE%9D%E8%B5%96%E5%85%BC%E5%AE%B9">依赖兼容</a></li>
+<li><a href="#%E5%9B%9E%E6%BB%9A%E5%85%BC%E5%AE%B9">回滚兼容：</a></li>
+</ul>
+</li>
+</ul>
+<br>
+什么是非功能性需求？是指除了业务功能需求以外的所有需求<br>
+具体而言，常见的此类需求有：</p>
+<ul>
+<li>稳定性需求</li>
+<li>预案需求</li>
+<li>可测试性需求</li>
+<li>资金安全需求</li>
+<li>兼容性需求<br>
+……</li>
+</ul>
+<h1 id="稳定性">稳定性</h1>
+<p>衡量指标：</p>
+<ul>
+<li>平均无故障时间</li>
+<li>平均恢复时间，从异常状态中恢复所需的时间</li>
+<li>故障规模</li>
+<li>故障频率</li>
+<li>波动范围<br>
+除此之外稳定性还包括了单个场景下<em>整个调用链路的稳定性</em>，以及<em>开发周期中的横向稳定性</em></li>
+</ul>
+<h2 id="如何保障一个系统的纵向稳定性">如何保障一个系统的纵向稳定性？</h2>
+<ul>
+<li>事前：容量评估，压测摸底，制定预案</li>
+<li>事中：监控告警</li>
+<li>事后：限流，降级</li>
+</ul>
+<h1 id="可测性设计">可测性设计</h1>
+<p>产品开发完毕后，需要测试工程师测试通过，产品验收确认方可上线，为了便于测试进行，开发时需充分考虑可测性，可测性包括<em>可操作</em>、<em>可灰度</em>和<em>可压测</em>三方面。</p>
+<h2 id="可操作">可操作</h2>
+<p>可操作以抽奖为例，会有参与人群限制，参与时间限制，参与次数限制和中奖概率限制，为了方便测试，这些限制应该被设计成可配置的。除此之外还会遇到环境限制（开发、测试、灰度等），一般采用的方法是数据生成或者打桩的方法模拟环境。</p>
+<h2 id="可灰度">可灰度</h2>
+<p>可灰度是指两个版本之间可以平滑的进行过渡，避免新产品或者新功能的上线对用户体验造成大范围的负面影响。除此之外，一些问题只有在生产环境下才能暴露出来，所以在正式上线之前，需要服务端提供灰度能力，以支持小流量下的测试。一般来说，<em>构建灰度能力主要包括两部分：灰度标识和灰度配置</em>，从请求中提取灰度标识，再结合灰度配置判断请求是否合法。如果链路涉及到多个系统，那么凡是和新功能、新产品有关的节点均需要支持灰度能力。</p>
+<h2 id="可压测">可压测</h2>
+<p>交付测试是一个新的开始，工作还远远没有结束，整个测试阶段都需要提供技术支持。为了保证测试顺利进行，需要充分考虑可测性，包括可操作、可灰度和可压测三个方面。</p>
+<h3 id="压测支持">压测支持</h3>
+<p>进行压测的前提是，为此服务端需要做一些处理：识别压测流量、跳过部分强校验、透传压测标记、构建影子表等。</p>
+<h3 id="压测开关">压测开关</h3>
+<p>针对压测的接口，一般应该设计开关，来拒绝压测流量，防止生产环境被压测流量打崩。</p>
+<h2 id="资金安全设计">资金安全设计</h2>
+<p>资金安全设计主要是为了防止资损的出现，一般从<em>资金流</em>、<em>用户交互</em>、<em>资金规则</em>、<em>时效性</em>、<em>异常</em>等5个方面入手，每个都是充满细节的大坑，所以要谨慎再谨慎。</p>
+<h3 id="潜在的风险场景">潜在的风险场景：</h3>
+<p>并发、幂等、分布式事务、接口规约、数据计算精度、配置校验等，这些场景下出现的问题多为一致性问题。应对这些问题可以分为三个步骤：<em>技术规避、核对发现、应急止损</em>。</p>
+<h1 id="兼容性">兼容性</h1>
+<p>兼容性是指应用在硬件、配置、数据、版本存在差异的情况下仍然可以正常工作的能力，包括</p>
+<h2 id="逻辑兼容">逻辑兼容</h2>
+<p>发布过程中新旧代码产生的数据不一致导致的问题，一般在需要兼容的地方加一个切流开关</p>
+<h2 id="数据库兼容">数据库兼容</h2>
+<p>如果设计方案包括数据库表和索引变更，为了兼容，需要注意以下事项：</p>
+<ul>
+<li>查询语句避免使用 “select * from x_table”</li>
+<li>发布期间避免执行数据变更</li>
+<li>数据表新增字段，默认值允许为空</li>
+<li>修改索引，先新增后删除</li>
+<li>使用新索引的业务，索引生效后再引流</li>
+</ul>
+<h2 id="依赖兼容">依赖兼容</h2>
+<p>依赖兼容主要涉及以下方面：</p>
+<ul>
+<li>模型中新增相关属性后，需要保证系统无依赖新增属性的业务流量，一般可通过控制发布顺序进行兼容。</li>
+<li>模型中新增相关属性后，需保证新增属性的默认值不会影响原有代码的逻辑。</li>
+<li>模型中（rpc服务请求，消息DTO）中不要使用枚举类型，避免反序列化失败。</li>
+<li>尽可能避免删除属性，原则上禁止删除属性。</li>
+<li>若接口新增属性，应用内部不能进行必填强校验，以兼容未升级的接口调用方。</li>
+</ul>
+<h2 id="回滚兼容">回滚兼容：</h2>
+<p>线上故障回滚大都是临时性的，但是产品层面的回滚是永久性的，即该产品需求废弃，整体回滚到上一版本。若要支持产品回滚能力，应重点关注以下两个方面：</p>
+<ul>
+<li>发布过程中新代码产生的数据，在回滚后能否被正确处理。存在这么一种极端情况，新代码产生的数据涉及资金的，<em>不能因产品的回滚而清除或失效，这就需要对涉及到的用户做定制兼容，成本非常高</em>。</li>
+<li>当系统回滚时，链路上是否存在强依赖的其它系统需要同步回滚。</li>
+</ul>
+<p>除以上提到的非功能性设计之外，还有异常补偿设计和拓展性设计，这两个概念比较宽泛，暂不提及。</p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://alexanderzopic.github.io/tag/YafHrj7Oq/" class="tag">
+                    系统设计
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://alexanderzopic.github.io/post/lX-J1xnP9/">
+                  <h3 class="post-title">
+                    kafka读书笔记（六）可靠性探究之日志同步机制
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

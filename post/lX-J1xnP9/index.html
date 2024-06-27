@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>kafka读书笔记（六）可靠性探究之日志同步机制 | Domination of Zopic</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://alexanderzopic.github.io/favicon.ico?v=1719477896937">
+<link rel="stylesheet" href="https://alexanderzopic.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="
+日志同步机制
+
+副本
+AR、ISR、OSR
+LEO与HW
+ISR的缩小
+ISR的扩展
+ISR伸缩的条件
+ISR的伸缩与HW
+
+
+可靠性分析
+
+
+上一章我们从客户端角度分析了kafka在消息可靠性方面做了哪些保证，下面我们从副本角度讲讲，k..." />
+    <meta name="keywords" content="技术,kafka,中间件" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://alexanderzopic.github.io">
+        <img src="https://alexanderzopic.github.io/images/avatar.png?v=1719477896937" class="site-logo">
+        <h1 class="site-title">Domination of Zopic</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于我
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      这里是Zopic形式化自己思维的地方<br/>
+This is where Zopic formalizes his thinking
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://alexanderzopic.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">kafka读书笔记（六）可靠性探究之日志同步机制</h2>
+            <div class="post-date">2024-06-19</div>
+            
+              <div class="feature-container" style="background-image: url('https://alexanderzopic.github.io/post-images/lX-J1xnP9.webp')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <p><ul class="markdownIt-TOC">
+<li><a href="#%E6%97%A5%E5%BF%97%E5%90%8C%E6%AD%A5%E6%9C%BA%E5%88%B6">日志同步机制</a>
+<ul>
+<li><a href="#%E5%89%AF%E6%9C%AC">副本</a></li>
+<li><a href="#ar-isr-osr">AR、ISR、OSR</a></li>
+<li><a href="#leo%E4%B8%8Ehw">LEO与HW</a></li>
+<li><a href="#isr%E7%9A%84%E7%BC%A9%E5%B0%8F">ISR的缩小</a></li>
+<li><a href="#isr%E7%9A%84%E6%89%A9%E5%B1%95">ISR的扩展</a></li>
+<li><a href="#isr%E4%BC%B8%E7%BC%A9%E7%9A%84%E6%9D%A1%E4%BB%B6">ISR伸缩的条件</a></li>
+<li><a href="#isr%E7%9A%84%E4%BC%B8%E7%BC%A9%E4%B8%8Ehw">ISR的伸缩与HW</a></li>
+</ul>
+</li>
+<li><a href="#%E5%8F%AF%E9%9D%A0%E6%80%A7%E5%88%86%E6%9E%90">可靠性分析</a></li>
+</ul>
+<br>
+上一章我们从客户端角度分析了kafka在消息可靠性方面做了哪些保证，下面我们从副本角度讲讲，kafka是如何保证消息不丢失的。</p>
+<h1 id="日志同步机制">日志同步机制</h1>
+<p>在分布式系统中，日志同步机制既要保证数据的一致性，也要保证数据的顺序性。为了达到这些目的，并出于简单方便的考虑，kafka选择了强leader的设计：有且只有一个leader，该leader提供了所有的读写服务并会处理数据的顺序性。<br>
+这也就是说<strong>通常情况下</strong>只有leader在与客户端进行交互，<strong>我们不需要考虑副本同步问题</strong>。反之，假如leader宕机，那么副本同步策略就会影响到数据的一致性。<br>
+而kafka的leader宕机策略很简单：**在集群中维护了一个isr集合，只有处于isr集合内的副本才有成为leader的可能。**接下来本文会详解关于ISR的一切。</p>
+<h2 id="副本">副本</h2>
+<p>为了提高kafka集群的吞吐量，kafka设计以主题分区为粒度的消息生产、消费与存储。在此基础上，kafka引入了多副本机制来提升容灾能力。副本之间是一主多从的关系，leader负责处理所有的读写，follower只负责与leader副本的消息消息同步。<strong>当leader出现故障</strong>，则<strong>控制器选择一个follower替换leader，并以该follwer的日志为准对其它follower日志进行同步</strong>，从而实现了故障的自动转移。</p>
+<h2 id="ar-isr-osr">AR、ISR、OSR</h2>
+<p>分区中所有副本称为AR，所有与leader副本保持一定程度的副本（包括leader副本在内）组成ISR，OSR则是滞后的过多副本的集合。<br>
+leader副本负责跟踪和维护ISR集合中所有follower副本的滞后状态，<strong>follower落后太多或者失效时，leader副本会把它从ISR集合中剔除</strong>。</p>
+<h2 id="leo与hw">LEO与HW</h2>
+<p>LEO（last end offset）标识当前日志文件中下一条待写入消息的offset，ISR中的每个副本都会维护自身的LEO，其中<strong>最小的LEO即分区的HW</strong>，对消费者而言只能消费HW之前的消息。leader所在的节点会记录所有副本的LEO，而follower副本所在的节点只会记录自身的LEO。</p>
+<h2 id="isr的缩小">ISR的缩小</h2>
+<p><strong>ISR的缩小过程，就是把副本从ISR转移到OSR的过程。</strong><br>
+处于同步失效或者功能失效的副本都可称为失效副本。<br>
+同步失效判定：<br>
+<strong>当follower副本向leader副本拉取消息时</strong>，假如此时leader判断<strong>所有的消息都被leader拉取完毕</strong>，就会<strong>更新记录下这次拉取的时间</strong>，称为lastCaughtUpTimeUs。<br>
+同时，<strong>leader副本还会启动一个定时任务，对比配置的超时时间和该参数（lastCaughtUpTimeUs）之间的差，差值过大则将该副本踢出</strong>。</p>
+<h2 id="isr的扩展">ISR的扩展</h2>
+<p>当follower不断拉取leader副本进行消息同步，最终使得follower的LEO不小于ISR的HW时，follower副本就能加入ISR。</p>
+<h2 id="isr伸缩的条件">ISR伸缩的条件</h2>
+<p>当检测到分区的ISR发生变化时，还需要检查以下两个条件：</p>
+<ul>
+<li>上一次isr变化发生在五秒之前</li>
+<li>上一次写入zookpeer的时间是在60秒之前</li>
+</ul>
+<p>满足这两个条件才能把isr变化写入目标节点。这么做主要是考虑到zookpeer的性能和watch机制带来的负担。</p>
+<h2 id="isr的伸缩与hw">ISR的伸缩与HW</h2>
+<p>当ISR发生伸缩，或者ISR集合中任一副本的LEO发生变化时，都会影响ISR整个分区的HW。</p>
+<h1 id="可靠性分析">可靠性分析</h1>
+<p><strong>就kafka集群而言</strong>，越多的副本数越能保证数据的可靠性，不过副本数过多也会造成网络带宽、磁盘的浪费，并对服务器造成不必要的压力（譬如日志读写带来的IO）。一般来说一个分区有3个副本就够用了（书上说的，俺寻思不出来为啥），有些银行服务会选择5个副本。同时，如果在分配分区副本时引入了机架信息，那么还要面临机架整体宕机的风险。<br>
+根据上面的分区leader替换机制可以看出，仅仅依靠副本数来保证数据的可靠是远远不够的，通过对于生产者客户端参数ack的配置，我们可以调整数据的可靠性。一般来说，将ack设置为-1可以获得最大的可靠性，这种情况下，只有ISR中的全部副本都同步到了信息才会回复成功，否则生产者会收到信息失败的回复。</p>
+<p><strong>对于生产者而言</strong>，消息发送有三种策略：</p>
+<ul>
+<li>发后既忘</li>
+<li>同步</li>
+<li>异步</li>
+</ul>
+<p>（在使用ack=-1的前提下）<br>
+使用发后既忘的策略可能会导致消息丢失。同步和异步模式可以通过重试提高可靠性，但是可能会引起消息重复。</p>
+<p><strong>除此之外，一些</strong>配置<strong>也会影响到消息的可靠性。</strong><br>
+生产者的ack参数：前文已经说明，不再赘述<br>
+生产者的min.insync.replicas参数：指定ISR最小的副本数，小于该数会返回异常<br>
+生产者的retries和retry.backoff.ms参数：对于可重试异常（NetworkException）的重试次数，以及重试的时间间隔。<br>
+控制器的unclean.leader.election.enable:令其值为true会可能会导致OSR中的副本被选举成leader。</p>
+<p>broker端的log.flush.interval.messages和log.flush.interval.ms：用来调整刷盘时机，默认是由操作系统做持久化。同步刷盘可以有效地保证持久化，代价是性能的极大降低。</p>
+<p>消费者方面可以通过修改位移提交时机来调整可靠性，也可以利用消费回溯的功能兜底。对于一些消费失败的信息，可以用死信队列来完成后继的处理。</p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://alexanderzopic.github.io/tag/zNA0dS94q/" class="tag">
+                    技术
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/s_Y9xVa1r/" class="tag">
+                    kafka
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/GOVR3bDrmu/" class="tag">
+                    中间件
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://alexanderzopic.github.io/post/NMSWVMsCb/">
+                  <h3 class="post-title">
+                    kafka读书笔记（五）消息可靠性探究之客户端
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>

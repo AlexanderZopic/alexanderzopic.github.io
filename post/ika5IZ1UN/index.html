@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" >
+
+<title>kafka读书笔记（一）kafka基本框架 | Domination of Zopic</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.2/css/all.css" integrity="sha384-fnmOCqbTlWIlj8LyTjo7mOUStjsKC4pOpQbqyi7RrhN7udi9RwhKkMHpvLbHG9Sr" crossorigin="anonymous">
+<link rel="shortcut icon" href="https://alexanderzopic.github.io/favicon.ico?v=1719477896937">
+<link rel="stylesheet" href="https://alexanderzopic.github.io/styles/main.css">
+
+
+
+<link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+
+
+
+    <meta name="description" content="前言
+在深入kafka各方面的知识之前需要对kafka的基本框架有所了解，理解它的基本功能和设计理念，这样才能更好的掌握之后各个模块之间的关系。
+上一章提到kafka的可以扮演的三个基本角色，消息中间件、持久化保存系统和消息流平台，也就是说..." />
+    <meta name="keywords" content="技术,kafka,中间件" />
+  </head>
+  <body>
+    <div id="app" class="main">
+
+      <div class="sidebar" :class="{ 'full-height': menuVisible }">
+  <div class="top-container" data-aos="fade-right">
+    <div class="top-header-container">
+      <a class="site-title-container" href="https://alexanderzopic.github.io">
+        <img src="https://alexanderzopic.github.io/images/avatar.png?v=1719477896937" class="site-logo">
+        <h1 class="site-title">Domination of Zopic</h1>
+      </a>
+      <div class="menu-btn" @click="menuVisible = !menuVisible">
+        <div class="line"></div>
+      </div>
+    </div>
+    <div>
+      
+        
+          <a href="/" class="site-nav">
+            首页
+          </a>
+        
+      
+        
+          <a href="/archives" class="site-nav">
+            归档
+          </a>
+        
+      
+        
+          <a href="/tags" class="site-nav">
+            标签
+          </a>
+        
+      
+        
+          <a href="/post/about" class="site-nav">
+            关于我
+          </a>
+        
+      
+    </div>
+  </div>
+  <div class="bottom-container" data-aos="flip-up" data-aos-offset="0">
+    <div class="social-container">
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    </div>
+    <div class="site-description">
+      这里是Zopic形式化自己思维的地方<br/>
+This is where Zopic formalizes his thinking
+    </div>
+    <div class="site-footer">
+       | <a class="rss" href="https://alexanderzopic.github.io/atom.xml" target="_blank">RSS</a>
+    </div>
+  </div>
+</div>
+
+
+      <div class="main-container">
+        <div class="content-container" data-aos="fade-up">
+          <div class="post-detail">
+            <h2 class="post-title">kafka读书笔记（一）kafka基本框架</h2>
+            <div class="post-date">2024-06-19</div>
+            
+              <div class="feature-container" style="background-image: url('https://alexanderzopic.github.io/post-images/ika5IZ1UN.webp')">
+              </div>
+            
+            <div class="post-content" v-pre>
+              <h1 id="前言">前言</h1>
+<p>在深入kafka各方面的知识之前需要对kafka的基本框架有所了解，理解它的基本功能和设计理念，这样才能更好的掌握之后各个模块之间的关系。<br>
+上一章提到kafka的可以扮演的三个基本角色，消息中间件、持久化保存系统和消息流平台，也就是说kafka实现了消息发布订阅和分布式持久化存储这两个方面，本文将会分别介绍这两方面的框架。</p>
+<h1 id="从消息系统角度看kafka">从消息系统角度看kafka</h1>
+<ul>
+<li><strong>基本角色：</strong><br>
+kafka是一个基于主题的消息中间件，在它的抽象设计中必然有这么几种角色——<strong>生产者、消费者、主题</strong>：<br>
+消费者者订阅主题并消费消息，生产者则向主题提供消息，生产者和消费者通过主题来交换消息。<br>
+具体而言，在kafka的设计中，客户端可以作为生产者向主题推送消息，也可作为消费者拉取消息，由一系列broker（kafka实例）构成的服务集群则维护和管理主题下的消息和相关的元数据。</li>
+<li><strong>分区：</strong><br>
+在上述基础上为了提高系统的吞吐率，防止单机的I/O成为主题的瓶颈，kafka在主题下引入了分区这一概念，一个主题下可以拥有多个分区，一个分区只对应一个主题。生产者以分区为单位推送消息，消费者以分区为单位拉取消息。</li>
+<li><strong>消费者组：</strong><br>
+同时，出于提高消费效率、增加消费模式的灵活性、以及实现故障容灾功能的目的，kafka引入了消费者组这一概念。消费者组和消费者之间的关系是多对一的关系，每个消费者隶属于且仅隶属于一个消费者组，一个消费者组下可以有多个消费者。<br>
+从消费关系上讲，每个分区只允许消费者组中一个消费者消费，但是可以同时被两个不同消费者组下的不同消费者消费。消费组的成员订阅它们感兴趣的主题并将这种订阅关系传递给集群。集群中的协调者会选择其中的一个消费者来执行这个消费组的分区分配并将分配结果转发给消费组内所有的消费者。</li>
+</ul>
+<h1 id="从分布式存储角度看kafka">从分布式存储角度看kafka</h1>
+<ul>
+<li>
+<p><strong>kafka的集群的构成？</strong><br>
+kafka的集群由一系列的broker（kafka服务实例）和一个zookeeper集群构成，除了向外提供服务以外，还负责存储消息和元数据的功能。（在即将发布的 2.8 版本里，用户可在完全不需要 ZooKeeper 的情况下运行 Kafka，该版本将依赖于 ZooKeeper 的控制器改造成了基于 Kafka Raft 的 Quorm 控制器。）broker和broker之间，客户端与broker均使用基于tcp的通信协议进行通信。</p>
+</li>
+<li>
+<p><strong>kafka是如何存储消息日志的？</strong><br>
+上面说到生产者是以主题分区为单位投递消息的，也就是说每一条消息在发送到broker之前生产者（或者转发者）会根据分区规则决定消息存储到哪个分区中。<br>
+分区在存储层面可以看作一个可追加的日志文件，新来的消息会被追加到文件日志的尾部。由于在kafka的架构设计中写操作是由一个实例执行的，所以消息之间在主题分区的粒度上是有序的，跨分区的顺序则无法保证。如果你的业务需要强顺序保证，可以选择将所有消息投递到一个同一个分区上，但这牺牲了kafka高吞吐的特性。</p>
+</li>
+<li>
+<p><strong>kafka在分布式存储层面的可靠性保证做了哪些努力？</strong><br>
+kafka为分区引入了多副本机制，通过增加副本数量可以提升容灾能力（但将副本部署在同一台机器不仅不能提供容灾能力，还会导致资源竞争）。副本之间是“一主多从”的关系，主副本负责向外提供服务，接受读写请求。<br>
+kafka在主从副本的基础上，建立了一整进行故障转移的方案：通过维护名为ISR（in-sync replication）的动态集合来提供候选实例，由控制器节点根据配置和规则来任命主节点。</p>
+</li>
+<li>
+<p><strong>kafka都存储，或者说维护了哪些元数据？</strong><br>
+基于2.7版本，我们可以描绘出下图：<br>
+<img src="https://alexanderzopic.github.io/post-images/1718757126457.png" alt="" loading="lazy"></p>
+</li>
+</ul>
+<h1 id="总结">总结</h1>
+<p>生产者以推送的方式将消息推送到指定的主题分区，消费者通过拉取的方式从订阅的主题分区拉取数据。<br>
+每个消费者都隶属于唯一的消费者组，一个主题分区下的消息只能被同一消费者组下的一个消费者消费，但可以被不同的消费者组下的消费者消费。<br>
+kafka将主题分区实现为一个有索引的可追加日志，并通过多副本和ISR机制完成了故障转移。<br>
+消费者、消费者组、主题、集群、broker之间的关系可以用下图表示：<br>
+<img src="https://alexanderzopic.github.io/post-images/1718757146599.png" alt="" loading="lazy"></p>
+
+            </div>
+            
+              <div class="tag-container">
+                
+                  <a href="https://alexanderzopic.github.io/tag/zNA0dS94q/" class="tag">
+                    技术
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/s_Y9xVa1r/" class="tag">
+                    kafka
+                  </a>
+                
+                  <a href="https://alexanderzopic.github.io/tag/GOVR3bDrmu/" class="tag">
+                    中间件
+                  </a>
+                
+              </div>
+            
+            
+              <div class="next-post">
+                <div class="next">下一篇</div>
+                <a href="https://alexanderzopic.github.io/post/jMYr87aN9/">
+                  <h3 class="post-title">
+                    kafka读书笔记（零）初识kafka
+                  </h3>
+                </a>
+              </div>
+            
+
+            
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+<script type="application/javascript">
+
+AOS.init();
+
+var app = new Vue({
+  el: '#app',
+  data: {
+    menuVisible: false,
+  },
+})
+
+</script>
+
+
+  <script src="//cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.5.1/build/highlight.min.js"></script>
+  <script>
+    hljs.initHighlightingOnLoad()
+  </script>
+
+
+
+
+
+  </body>
+</html>
